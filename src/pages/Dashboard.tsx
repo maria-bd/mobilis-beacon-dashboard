@@ -1,16 +1,81 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+
+// API service for fetching dashboard data
+const fetchEnergyData = async () => {
+  try {
+    // This would be replaced with your actual API endpoint
+    const response = await fetch('https://api.example.com/dashboard/energy');
+    if (!response.ok) throw new Error('Failed to fetch energy data');
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching energy data:', error);
+    throw error;
+  }
+};
+
+const fetchTemperatureData = async () => {
+  try {
+    const response = await fetch('https://api.example.com/dashboard/temperature');
+    if (!response.ok) throw new Error('Failed to fetch temperature data');
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching temperature data:', error);
+    throw error;
+  }
+};
+
+const fetchSecurityData = async () => {
+  try {
+    const response = await fetch('https://api.example.com/dashboard/security');
+    if (!response.ok) throw new Error('Failed to fetch security data');
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching security data:', error);
+    throw error;
+  }
+};
 
 const Dashboard = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
   
-  // Mock data for charts
-  const energyData = [
+  // Use React Query to fetch data
+  const { data: energyData = [], isLoading: isLoadingEnergy, error: energyError } = useQuery({
+    queryKey: ['dashboardEnergy'],
+    queryFn: fetchEnergyData,
+  });
+  
+  const { data: temperatureData = [], isLoading: isLoadingTemp, error: tempError } = useQuery({
+    queryKey: ['dashboardTemperature'],
+    queryFn: fetchTemperatureData,
+  });
+  
+  const { data: securityData = [], isLoading: isLoadingSecurity, error: securityError } = useQuery({
+    queryKey: ['dashboardSecurity'],
+    queryFn: fetchSecurityData,
+  });
+  
+  // Show error toast if any fetch fails
+  useEffect(() => {
+    if (energyError || tempError || securityError) {
+      toast({
+        title: t('error'),
+        description: t('failed_to_load_data'),
+        variant: "destructive",
+      });
+    }
+  }, [energyError, tempError, securityError, toast, t]);
+  
+  // Mock data as fallback if API fails or for development
+  const fallbackEnergyData = [
     { name: 'Jan', consumption: 4000, production: 2400 },
     { name: 'Feb', consumption: 3000, production: 2210 },
     { name: 'Mar', consumption: 2000, production: 2290 },
@@ -20,7 +85,7 @@ const Dashboard = () => {
     { name: 'Jul', consumption: 3490, production: 4100 },
   ];
   
-  const temperatureData = [
+  const fallbackTemperatureData = [
     { name: '00:00', temp: 22 },
     { name: '04:00', temp: 20 },
     { name: '08:00', temp: 25 },
@@ -30,7 +95,7 @@ const Dashboard = () => {
     { name: '23:59', temp: 22 },
   ];
   
-  const securityData = [
+  const fallbackSecurityData = [
     { name: 'Mon', alerts: 2 },
     { name: 'Tue', alerts: 0 },
     { name: 'Wed', alerts: 1 },
@@ -39,6 +104,11 @@ const Dashboard = () => {
     { name: 'Sat', alerts: 0 },
     { name: 'Sun', alerts: 0 },
   ];
+  
+  // Use the API data if available, otherwise use the fallback data
+  const displayEnergyData = energyData.length > 0 ? energyData : fallbackEnergyData;
+  const displayTemperatureData = temperatureData.length > 0 ? temperatureData : fallbackTemperatureData;
+  const displaySecurityData = securityData.length > 0 ? securityData : fallbackSecurityData;
   
   return (
     <div className="space-y-6">
@@ -56,15 +126,21 @@ const Dashboard = () => {
             <CardDescription>{t('consumption')} & {t('production')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={energyData}>
-                <XAxis dataKey="name" fontSize={12} />
-                <YAxis fontSize={12} />
-                <Tooltip />
-                <Bar dataKey="consumption" fill="#d7242d" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="production" fill="#2da836" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {isLoadingEnergy ? (
+              <div className="flex justify-center items-center h-[200px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={displayEnergyData}>
+                  <XAxis dataKey="name" fontSize={12} />
+                  <YAxis fontSize={12} />
+                  <Tooltip />
+                  <Bar dataKey="consumption" fill="#d7242d" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="production" fill="#2da836" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
         
@@ -74,19 +150,25 @@ const Dashboard = () => {
             <CardDescription>{t('solar_panels')} {t('temperature')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={temperatureData}>
-                <XAxis dataKey="name" fontSize={12} />
-                <YAxis fontSize={12} />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="temp" 
-                  stroke="#d7242d" 
-                  strokeWidth={2} 
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {isLoadingTemp ? (
+              <div className="flex justify-center items-center h-[200px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={displayTemperatureData}>
+                  <XAxis dataKey="name" fontSize={12} />
+                  <YAxis fontSize={12} />
+                  <Tooltip />
+                  <Line 
+                    type="monotone" 
+                    dataKey="temp" 
+                    stroke="#d7242d" 
+                    strokeWidth={2} 
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
         
@@ -96,14 +178,20 @@ const Dashboard = () => {
             <CardDescription>{t('alerts')} {t('stats')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={securityData}>
-                <XAxis dataKey="name" fontSize={12} />
-                <YAxis fontSize={12} />
-                <Tooltip />
-                <Bar dataKey="alerts" fill="#d7242d" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {isLoadingSecurity ? (
+              <div className="flex justify-center items-center h-[200px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={displaySecurityData}>
+                  <XAxis dataKey="name" fontSize={12} />
+                  <YAxis fontSize={12} />
+                  <Tooltip />
+                  <Bar dataKey="alerts" fill="#d7242d" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>

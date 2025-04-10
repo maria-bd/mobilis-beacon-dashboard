@@ -1,15 +1,96 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/context/LanguageContext';
 import { Line, LineChart, Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+
+// API service for fetching energy data
+const fetchEnergyData = async () => {
+  try {
+    // This would be replaced with your actual API endpoint
+    const response = await fetch('https://api.example.com/energy/solar');
+    if (!response.ok) throw new Error('Failed to fetch solar data');
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching solar data:', error);
+    throw error;
+  }
+};
+
+const fetchTemperatureData = async () => {
+  try {
+    const response = await fetch('https://api.example.com/energy/temperature');
+    if (!response.ok) throw new Error('Failed to fetch temperature data');
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching temperature data:', error);
+    throw error;
+  }
+};
+
+const fetchRbCellsData = async () => {
+  try {
+    const response = await fetch('https://api.example.com/energy/rbcells');
+    if (!response.ok) throw new Error('Failed to fetch RB cells data');
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching RB cells data:', error);
+    throw error;
+  }
+};
+
+const fetchFrequencyData = async () => {
+  try {
+    const response = await fetch('https://api.example.com/energy/frequency');
+    if (!response.ok) throw new Error('Failed to fetch frequency data');
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching frequency data:', error);
+    throw error;
+  }
+};
 
 const Energy = () => {
   const { t } = useLanguage();
+  const { toast } = useToast();
   
-  // Mock data for charts
-  const solarData = [
+  // Use React Query to fetch data
+  const { data: solarData = [], isLoading: isLoadingSolar, error: solarError } = useQuery({
+    queryKey: ['energySolar'],
+    queryFn: fetchEnergyData,
+  });
+  
+  const { data: temperatureData = [], isLoading: isLoadingTemp } = useQuery({
+    queryKey: ['energyTemperature'],
+    queryFn: fetchTemperatureData,
+  });
+  
+  const { data: rbCellsData = [], isLoading: isLoadingRbCells } = useQuery({
+    queryKey: ['energyRbCells'],
+    queryFn: fetchRbCellsData,
+  });
+  
+  const { data: frequencyData = [], isLoading: isLoadingFrequency } = useQuery({
+    queryKey: ['energyFrequency'],
+    queryFn: fetchFrequencyData,
+  });
+  
+  // Show error toast if any fetch fails
+  useEffect(() => {
+    if (solarError) {
+      toast({
+        title: t('error'),
+        description: t('failed_to_load_data'),
+        variant: "destructive",
+      });
+    }
+  }, [solarError, toast, t]);
+  
+  // Mock data as fallback if API fails or for development
+  const fallbackSolarData = [
     { time: '06:00', output: 0.2, temp: 18 },
     { time: '08:00', output: 1.2, temp: 22 },
     { time: '10:00', output: 2.5, temp: 26 },
@@ -20,7 +101,7 @@ const Energy = () => {
     { time: '20:00', output: 0.1, temp: 20 },
   ];
   
-  const rbCellsData = [
+  const fallbackRbCellsData = [
     { name: 'Cell A', charge: 85 },
     { name: 'Cell B', charge: 92 },
     { name: 'Cell C', charge: 78 },
@@ -29,7 +110,7 @@ const Energy = () => {
     { name: 'Cell F', charge: 63 },
   ];
   
-  const frequencyData = [
+  const fallbackFrequencyData = [
     { time: '00:00', value: 50.1 },
     { time: '03:00', value: 49.9 },
     { time: '06:00', value: 50.0 },
@@ -39,6 +120,12 @@ const Energy = () => {
     { time: '18:00', value: 50.0 },
     { time: '21:00', value: 50.1 },
   ];
+  
+  // Use the API data if available, otherwise use the fallback data
+  const displaySolarData = solarData.length > 0 ? solarData : fallbackSolarData;
+  const displayTempData = temperatureData.length > 0 ? temperatureData : fallbackSolarData;
+  const displayRbCellsData = rbCellsData.length > 0 ? rbCellsData : fallbackRbCellsData;
+  const displayFrequencyData = frequencyData.length > 0 ? frequencyData : fallbackFrequencyData;
   
   return (
     <div className="space-y-6">
@@ -59,30 +146,36 @@ const Energy = () => {
               <CardDescription>{t('consumption')} & {t('production')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={solarData}>
-                  <XAxis dataKey="time" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip />
-                  <Line 
-                    yAxisId="left"
-                    type="monotone" 
-                    dataKey="output" 
-                    stroke="#2da836" 
-                    strokeWidth={2} 
-                    name={t('production')}
-                  />
-                  <Line 
-                    yAxisId="right"
-                    type="monotone" 
-                    dataKey="temp" 
-                    stroke="#d7242d" 
-                    strokeWidth={2} 
-                    name={t('temperature')}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {isLoadingSolar ? (
+                <div className="flex justify-center items-center h-[300px]">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={displaySolarData}>
+                    <XAxis dataKey="time" />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip />
+                    <Line 
+                      yAxisId="left"
+                      type="monotone" 
+                      dataKey="output" 
+                      stroke="#2da836" 
+                      strokeWidth={2} 
+                      name={t('production')}
+                    />
+                    <Line 
+                      yAxisId="right"
+                      type="monotone" 
+                      dataKey="temp" 
+                      stroke="#d7242d" 
+                      strokeWidth={2} 
+                      name={t('temperature')}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
           
@@ -126,20 +219,26 @@ const Energy = () => {
               <CardDescription>{t('solar_panels')} {t('temperature')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={solarData}>
-                  <XAxis dataKey="time" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="temp" 
-                    stroke="#d7242d" 
-                    strokeWidth={2} 
-                    name={t('temperature')}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {isLoadingTemp ? (
+                <div className="flex justify-center items-center h-[300px]">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={displayTempData}>
+                    <XAxis dataKey="time" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line 
+                      type="monotone" 
+                      dataKey="temp" 
+                      stroke="#d7242d" 
+                      strokeWidth={2} 
+                      name={t('temperature')}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -151,19 +250,25 @@ const Energy = () => {
               <CardDescription>{t('rb_cells')} {t('decision')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={rbCellsData}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar 
-                    dataKey="charge" 
-                    fill={(entry) => entry.charge > 80 ? "#2da836" : "#d7242d"}
-                    radius={[4, 4, 0, 0]} 
-                    name={t('charge')}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              {isLoadingRbCells ? (
+                <div className="flex justify-center items-center h-[300px]">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={displayRbCellsData}>
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar 
+                      dataKey="charge" 
+                      fill="#2da836" 
+                      radius={[4, 4, 0, 0]} 
+                      name={t('charge')}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
               
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
@@ -212,20 +317,26 @@ const Energy = () => {
               <CardDescription>{t('frequency')} {t('decision')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={frequencyData}>
-                  <XAxis dataKey="time" />
-                  <YAxis domain={[49.5, 50.5]} />
-                  <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#2da836" 
-                    strokeWidth={2} 
-                    name={t('frequency')}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {isLoadingFrequency ? (
+                <div className="flex justify-center items-center h-[300px]">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={displayFrequencyData}>
+                    <XAxis dataKey="time" />
+                    <YAxis domain={[49.5, 50.5]} />
+                    <Tooltip />
+                    <Line 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#2da836" 
+                      strokeWidth={2} 
+                      name={t('frequency')}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
               
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
