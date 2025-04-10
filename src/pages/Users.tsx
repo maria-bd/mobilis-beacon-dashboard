@@ -141,11 +141,11 @@ const Users = () => {
         <TableHeader>
           <TableRow>
             <TableHead>{t('id')}</TableHead>
-            <TableHead>{t('first_name')}</TableHead>
-            <TableHead>{t('last_name')}</TableHead>
+            <TableHead>{t('First Name')}</TableHead>
+            <TableHead>{t('last name')}</TableHead>
             <TableHead>{t('email')}</TableHead>
             <TableHead>{t('status')}</TableHead>
-            <TableHead>{t('is_superuser')}</TableHead>
+            <TableHead>{t('is superuser')}</TableHead>
             <TableHead>{t('actions')}</TableHead>
           </TableRow>
         </TableHeader>

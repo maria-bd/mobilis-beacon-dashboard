@@ -161,10 +161,10 @@ const Material = () => {
                     <TableRow>
                       <TableHead>{t('id')}</TableHead>
                       <TableHead>{t('name')}</TableHead>
-                      <TableHead>{t('last_maintenance')}</TableHead>
-                      <TableHead>{t('next_maintenance')}</TableHead>
+                      <TableHead>{t('last maintenance')}</TableHead>
+                      <TableHead>{t('next maintenance')}</TableHead>
                       <TableHead>{t('status')}</TableHead>
-                      <TableHead>{t('time_left')}</TableHead>
+                      <TableHead>{t('time left')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
