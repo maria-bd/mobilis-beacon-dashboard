@@ -32,8 +32,10 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     >
       <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
         {!collapsed && (
-          <div className="text-xl font-bold text-sidebar-foreground">Mobilis</div>
-        )}
+          <img
+          src="/mobilis.png" 
+          alt="Mobilis"
+          className="h-8 w-auto"/>        )}
         <Button 
           variant="ghost" 
           size="icon" 

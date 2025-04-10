@@ -7,7 +7,7 @@
 import { toast } from '@/hooks/use-toast';
 
 // Base API URL - replace with your actual API endpoint
-const API_BASE_URL = 'https://api.example.com';
+const API_BASE_URL = 'https://jsonplaceholder.typicode.com';
 
 // Helper function to handle API errors consistently
 const handleApiError = (error: unknown, endpoint: string): never => {
@@ -172,3 +172,16 @@ export const api = {
     deleteUser: (id: string) => deleteData(`/users/${id}`),
   },
 };
+
+/*
+in Users.jsx after moh
+* type User = {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_active: boolean;
+  is_superuser: boolean;
+};
+*  Frequence : Time, users, signal, fréquence.
+*/
