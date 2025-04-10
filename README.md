@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Welcome to Mobilies Sites Management FRONTEND Project
 
 ## Project info
 
