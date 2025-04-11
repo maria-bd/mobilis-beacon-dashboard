@@ -5,7 +5,8 @@
 
 import { toast } from '@/hooks/use-toast';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+//const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = 'http://192.168.209.162:8000';
 
 const handleApiError = (error: unknown, endpoint: string): never => {
   const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -90,6 +91,36 @@ export const deleteData = async <R>(endpoint: string): Promise<R> => {
   }
 };
 
+// ABOUT ENERGY TEMPERATURE 
+// --------------------
+// Types for SystemStat
+// --------------------
+
+export type SystemStat = {
+  timestamp: string;
+  indoor_temp: number;
+  humidity: number;
+  server_load: number;
+  external_temp: number;
+  ac_level: number;
+  fans_active: boolean;
+  hour: number;
+};
+
+export type SystemStatRequest = {
+  indoor_temp: number;
+  humidity: number;
+  server_load: number;
+  external_temp: number;
+  ac_level: number;
+  fans_active: boolean;
+  hour: number;
+};
+
+export type SystemStatResponse = {
+  final_score: number;
+};
+
 export const api = {
   dashboard: {
     getEnergyData: () => fetchData('/dashboard/energy'),
@@ -97,12 +128,10 @@ export const api = {
     getSecurityData: () => fetchData('/dashboard/security'),
   },
 
-  energy: {
-    getSolarData: () => fetchData('/energy/solar'),
-    getTemperatureData: () => fetchData('/energy/temperature'),
-    getRbCellsData: () => fetchData('/energy/rbcells'),
-    getFrequencyData: () => fetchData('/energy/frequency'),
-  },
+  stats: {
+    listStats: () => fetchData<SystemStat[]>('/list-stats/'),
+    addStats: (data: SystemStatRequest) => postData<SystemStatRequest, SystemStatResponse>('/add-stats/', data),
+    },
 
   security: {
     getRfidUsers: () => fetchData('/security/rfid-users'),
@@ -121,11 +150,11 @@ export const api = {
   },
 
   users: {
-    getAllUsers: () => fetchData('/user/'),
-    getUserById: (id: string) => fetchData(`/user/${id}/`),
-    createUser: (userData: any) => postData('/user/create-user/', userData),
-    updateUser: (id: string, userData: any) => putData(`/user/${id}/`, userData),
-    deleteUser: (id: string) => deleteData(`/user/${id}/`),
+    getAllUsers: () => fetchData('/admin/users/'),
+    getUserById: (id: string) => fetchData(`/admin/users/${id}/`),
+    createUser: (userData: any) => postData('/admin/users/', userData),
+    updateUser: (id: string, userData: any) => putData(`/admin/users/${id}/`, userData),
+    deleteUser: (id: string) => deleteData(`/admin/users/${id}/`),
   },
 
   auth: {

@@ -32,9 +32,7 @@ const App = () => (
                 <Route path="/login" element={<Login />} />
                 <Route
                   element={
-                    <PrivateRoute>
                       <Layout />
-                    </PrivateRoute>
                   }
                 >
                   <Route path="/" element={<Dashboard />} />

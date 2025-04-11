@@ -6,8 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-
-// Modal or Form to add a user
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -24,10 +22,17 @@ type User = {
 const Users = () => {
   const { t } = useLanguage();
   const [usersData, setUsersData] = useState<User[]>([]);
-  const [newUser, setNewUser] = useState({ first_name: '', last_name: '', email: '', is_active: true, is_superuser: false });
+  const [newUser, setNewUser] = useState<Omit<User, 'id'>>({
+    first_name: '',
+    last_name: '',
+    email: '',
+    is_active: true,
+    is_superuser: false,
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
-  // Fetch users when the component mounts
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -41,24 +46,32 @@ const Users = () => {
     fetchUsers();
   }, []);
 
-  // Handle user creation
-  const handleCreateUser = async () => {
+  const handleCreateOrUpdateUser = async () => {
     try {
-      const user = await api.users.createUser(newUser);
-      setUsersData([...usersData, user]);
-      toast({ title: 'User created successfully!', variant: 'success' });
-      setIsModalOpen(false); // Close the modal after creation
+      if (isEditing && editingId !== null) {
+        const updated = await api.users.updateUser(editingId.toString(), newUser);
+        setUsersData(usersData.map((u) => (u.id === editingId ? updated : u)));
+        toast({ title: 'User updated successfully!', variant: 'success' });
+      } else {
+        const created = await api.users.createUser(newUser);
+        setUsersData([...usersData, created]);
+        toast({ title: 'User created successfully!', variant: 'success' });
+      }
+
+      setNewUser({ first_name: '', last_name: '', email: '', is_active: true, is_superuser: false });
+      setIsModalOpen(false);
+      setIsEditing(false);
+      setEditingId(null);
     } catch (error) {
-      toast({ title: 'Error creating user!', variant: 'destructive' });
-      console.error("Error creating user:", error);
+      toast({ title: isEditing ? 'Error updating user!' : 'Error creating user!', variant: 'destructive' });
+      console.error("Error:", error);
     }
   };
 
-  // Handle user deletion
   const handleDeleteUser = async (id: number) => {
     try {
       await api.users.deleteUser(id.toString());
-      setUsersData(usersData.filter((user) => user.id !== id)); // Remove the user from the state
+      setUsersData(usersData.filter((user) => user.id !== id));
       toast({ title: 'User deleted successfully!', variant: 'success' });
     } catch (error) {
       toast({ title: 'Error deleting user!', variant: 'destructive' });
@@ -66,13 +79,32 @@ const Users = () => {
     }
   };
 
+  const openEditModal = (user: User) => {
+    setNewUser({
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      is_active: user.is_active,
+      is_superuser: user.is_superuser,
+    });
+    setEditingId(user.id);
+    setIsEditing(true);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">{t('users')}</h1>
 
-        {/* Add user button */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog open={isModalOpen} onOpenChange={(val) => {
+          setIsModalOpen(val);
+          if (!val) {
+            setNewUser({ first_name: '', last_name: '', email: '', is_active: true, is_superuser: false });
+            setIsEditing(false);
+            setEditingId(null);
+          }
+        }}>
           <DialogTrigger asChild>
             <Button className="success-gradient">
               <Plus className="mr-2 h-4 w-4" />
@@ -80,10 +112,9 @@ const Users = () => {
             </Button>
           </DialogTrigger>
 
-          {/* Dialog content to add a user */}
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t('add_new_user')}</DialogTitle>
+              <DialogTitle>{isEditing ? t('edit_user') : t('add_new_user')}</DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4">
@@ -130,13 +161,14 @@ const Users = () => {
               <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                 {t('cancel')}
               </Button>
-              <Button onClick={handleCreateUser}>{t('create')}</Button>
+              <Button onClick={handleCreateOrUpdateUser}>
+                {isEditing ? t('update') : t('create')}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Table to display users */}
       <Table>
         <TableHeader>
           <TableRow>
@@ -152,39 +184,26 @@ const Users = () => {
         <TableBody>
           {usersData.map((user) => (
             <TableRow key={user.id}>
-              <TableCell className="font-medium">{user.id}</TableCell>
+              <TableCell>{user.id}</TableCell>
               <TableCell>{user.first_name}</TableCell>
               <TableCell>{user.last_name}</TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>
-                <Badge
-                  variant={user.is_active ? 'default' : 'secondary'}
-                  className={user.is_active ? 'bg-success' : 'bg-muted'}
-                >
+                <Badge variant={user.is_active ? 'default' : 'secondary'}>
                   {user.is_active ? t('active') : t('inactive')}
                 </Badge>
               </TableCell>
               <TableCell>
-                <Badge
-                  variant={user.is_superuser ? 'default' : 'secondary'}
-                  className={user.is_superuser ? 'bg-success' : 'bg-muted'}
-                >
+                <Badge variant={user.is_superuser ? 'default' : 'secondary'}>
                   {user.is_superuser ? t('superuser') : t('regular_user')}
                 </Badge>
               </TableCell>
               <TableCell>
                 <div className="flex space-x-2">
-                  {/* Edit Button */}
-                  <Button variant="outline" size="icon">
+                  <Button variant="outline" size="icon" onClick={() => openEditModal(user)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  {/* Delete Button */}
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="text-danger"
-                    onClick={() => handleDeleteUser(user.id)}
-                  >
+                  <Button variant="outline" size="icon" className="text-danger" onClick={() => handleDeleteUser(user.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
