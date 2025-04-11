@@ -1,19 +1,16 @@
-// src/components/PrivateRoute.tsx
 
-import { Navigate } from 'react-router-dom';
+// src/components/PrivateRoute.tsx
+import React from 'react';
 import useAuth from '@/hooks/use-auth';
 
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>; // You can display a loader here while checking authentication status.
+    return <div>Loading...</div>;
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
+  // Always render children in this version
   return children;
 };
 

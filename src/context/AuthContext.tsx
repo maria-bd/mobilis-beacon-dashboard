@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type UserRole = 'admin' | 'manager' | 'user';
 
@@ -20,41 +20,25 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  // Create a default user that's always available
+  const defaultUser: User = {
+    id: '1',
+    name: 'Demo User',
+    email: 'demo@example.com',
+    role: 'admin',
+  };
 
-  // Check for saved user in localStorage on initial load
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      setIsAuthenticated(true);
-    }
-  }, []);
+  const [user] = useState<User | null>(defaultUser);
+  const [isAuthenticated] = useState<boolean>(true);
 
-  // Mock login function (In a real app, this would make an API call)
-  const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
-    // For demo, we'll accept any non-empty values and create a mock user
-    if (email && password) {
-      const mockUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: email.split('@')[0],
-        email,
-        role,
-      };
-      
-      setUser(mockUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      return true;
-    }
-    return true;//rj3ha false 
+  // Mock login function (will not actually be used)
+  const login = async (): Promise<boolean> => {
+    return true;
   };
 
   const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('user');
+    // This function is kept for API compatibility but doesn't do anything
+    console.log('Logout functionality disabled in demo mode');
   };
 
   return (

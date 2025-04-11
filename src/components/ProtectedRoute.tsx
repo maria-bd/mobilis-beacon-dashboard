@@ -1,11 +1,10 @@
-// src/components/ProtectedRoute.tsx
+
 import React from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import useAuth from '@/hooks/use-auth';
 
 const ProtectedRoute: React.FC = () => {
-  const { isAuthenticated, loading } = useAuth();
-  const location = useLocation();
+  const { loading } = useAuth();
 
   // Show loading indicator while checking authentication
   if (loading) {
@@ -16,13 +15,7 @@ const ProtectedRoute: React.FC = () => {
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    // Save the location they were trying to access for later redirect
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  // If authenticated, render the child routes
+  // Always render the child routes in this version
   return <Outlet />;
 };
 

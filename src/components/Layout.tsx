@@ -1,23 +1,16 @@
 
 import React, { useState } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
-import { useAuth } from '@/context/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 
 const Layout = () => {
-  const { isAuthenticated } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
   };
-
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
-  }
   
   return (
     <div className="flex h-screen bg-background">
